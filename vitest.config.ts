@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import { resolve } from 'path'
 
 export default defineConfig({
   test: {
@@ -12,6 +13,13 @@ export default defineConfig({
     },
   },
   resolve: {
+    alias: {
+      // allow tests to import from 'src/...' without .js extensions
+      '@': resolve(__dirname, 'src'),
+    },
     extensions: ['.ts', '.js'],
+  },
+  esbuild: {
+    target: 'node18',
   },
 })
