@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+*.js.map
+*.d.ts.map
+.env
+.env.local
+.DS_Store
+*.log
+npm-debug.log*
+.nyc_output/
+.cache/

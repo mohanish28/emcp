@@ -1,0 +1,73 @@
+{
+  "name": "emcp",
+  "version": "0.1.0",
+  "description": "Enhanced MCP — enriched, typed, pixel-accurate, cross-server context for LLMs",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./adapters/figma": {
+      "import": "./dist/adapters/figma.esm.js",
+      "require": "./dist/adapters/figma.js",
+      "types": "./dist/adapters/figma.d.ts"
+    },
+    "./adapters/notion": {
+      "import": "./dist/adapters/notion.esm.js",
+      "require": "./dist/adapters/notion.js",
+      "types": "./dist/adapters/notion.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "llm",
+    "ai",
+    "figma",
+    "notion",
+    "context",
+    "enrichment",
+    "spatial",
+    "schema"
+  ],
+  "author": "emcp contributors",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/emcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/emcp/issues"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/emcp#readme"
+}
