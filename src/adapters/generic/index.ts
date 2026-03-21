@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { EMCPAdapter, EnrichedNode, SemanticType } from '../../core/types.js'
+import type { EMCPAdapter, EnrichedNode } from '../../core/types.js'
 import { EMCP_SCHEMA_VERSION } from '../../core/types.js'
 import { SemanticTagger } from '../../enrichment/tagger.js'
 import { ConfidenceScorer } from '../../enrichment/scorer.js'
@@ -178,11 +178,4 @@ export class GenericAdapter implements EMCPAdapter {
     return node
   }
 
-  // ─── Spatial extraction from nested objects ────────────────────────────────
-
-  private extractType(obj: Record<string, unknown>): SemanticType {
-    const typeStr = String(obj['type'] ?? obj['kind'] ?? obj['nodeType'] ?? '')
-    const tagged = this.tagger.tag(typeStr || 'unknown', typeStr)
-    return tagged.type
-  }
 }

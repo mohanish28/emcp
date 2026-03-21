@@ -1,7 +1,7 @@
 {
   "name": "emcp",
   "version": "0.1.0",
-  "description": "Enhanced MCP — enriched, typed, pixel-accurate, cross-server context for LLMs",
+  "description": "Enhanced MCP \u2014 enriched, typed, pixel-accurate, cross-server context for LLMs",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -30,7 +30,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",

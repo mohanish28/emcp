@@ -14,7 +14,7 @@ import { readFileSync, existsSync } from 'fs'
 import { EnhancedMCP } from '../EnhancedMCP.js'
 import { SlackAdapter } from '../adapters/slack/index.js'
 import { GenericAdapter } from '../adapters/generic/index.js'
-import { toJSON, toXML, toPixelManifest } from '../output/formatters.js'
+import { toXML, toPixelManifest } from '../output/formatters.js'
 import type { EnrichedContext } from '../core/types.js'
 
 // ─── ANSI colours ─────────────────────────────────────────────────────────────

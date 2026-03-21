@@ -1,4 +1,4 @@
-import type { Confidence, Spatial, Style } from '../core/types.js'
+import type { Confidence, Spatial } from '../core/types.js'
 
 export interface ConfidenceInputs {
   spatialFromApi: boolean      // true = coordinates came directly from API

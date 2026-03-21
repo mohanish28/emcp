@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import type { EMCPAdapter, EnrichedNode } from '../../core/types.js'
 import { EMCP_SCHEMA_VERSION } from '../../core/types.js'
-import { SemanticTagger } from '../../enrichment/tagger.js'
 import { ConfidenceScorer } from '../../enrichment/scorer.js'
 
 // ─── Slack API shapes ──────────────────────────────────────────────────────────
@@ -98,7 +97,6 @@ export class SlackAdapter implements EMCPAdapter {
   readonly name = 'slack'
   readonly version = '1.0.0'
 
-  private tagger = new SemanticTagger()
   private scorer = new ConfidenceScorer()
 
   canHandle(toolName: string, _response: unknown): boolean {

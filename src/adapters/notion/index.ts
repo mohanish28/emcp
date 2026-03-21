@@ -92,7 +92,7 @@ function getPageTitle(page: NotionPage): string {
   if (!page.properties) return page.id
   for (const prop of Object.values(page.properties)) {
     if (prop.type === 'title' && 'title' in prop) {
-      const title = extractPlainText(prop.title)
+      const title = extractPlainText((prop as { type: 'title'; title: Array<{ plain_text: string }> }).title)
       if (title) return title
     }
   }
