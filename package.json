@@ -1,7 +1,7 @@
 {
   "name": "emcp",
   "version": "0.1.0",
-  "description": "Enhanced MCP \u2014 enriched, typed, pixel-accurate, cross-server context for LLMs",
+  "description": "Enhanced MCP — enriched, typed, pixel-accurate, cross-server context for LLMs",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -64,7 +64,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/emcp.git"
+    "url": "git+https://github.com/YOUR_USERNAME/emcp.git"
   },
   "bugs": {
     "url": "https://github.com/YOUR_USERNAME/emcp/issues"
