@@ -1,5 +1,5 @@
 {
-  "name": "emcp",
+  "name": "@odin_ssup/emcp",
   "version": "0.1.0",
   "description": "Enhanced MCP — enriched, typed, pixel-accurate, cross-server context for LLMs",
   "main": "dist/index.js",
