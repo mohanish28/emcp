@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import type { EMCPAdapter, EnrichedNode } from '../../core/types.js'
 import { EMCP_SCHEMA_VERSION } from '../../core/types.js'
-import { SemanticTagger } from '../../enrichment/tagger.js'
 import { ConfidenceScorer } from '../../enrichment/scorer.js'
 
 // ─── Asana API shapes ──────────────────────────────────────────────────────────
@@ -140,7 +139,6 @@ export class AsanaAdapter implements EMCPAdapter {
   readonly name = 'asana'
   readonly version = '1.0.0'
 
-  private tagger = new SemanticTagger()
   private scorer = new ConfidenceScorer()
 
   canHandle(toolName: string, _response: unknown): boolean {

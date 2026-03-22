@@ -231,7 +231,7 @@ export class GitHubAdapter implements EMCPAdapter {
     return nodes
   }
 
-  private parseItem(item: unknown, toolName: string): EnrichedNode | null {
+  private parseItem(item: unknown, _toolName: string): EnrichedNode | null {
     // PR (must check before issue since PR extends issue shape)
     const prResult = GitHubPRSchema.safeParse(item)
     if (prResult.success && prResult.data.head !== undefined) {
