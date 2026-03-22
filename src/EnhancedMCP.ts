@@ -3,6 +3,8 @@ import { ContextRegistry } from './core/registry.js'
 import { FigmaAdapter } from './adapters/figma/index.js'
 import { NotionAdapter } from './adapters/notion/index.js'
 import { SlackAdapter } from './adapters/slack/index.js'
+import { AsanaAdapter } from './adapters/asana/index.js'
+import { GitHubAdapter } from './adapters/github/index.js'
 import { GenericAdapter } from './adapters/generic/index.js'
 import { toJSON, toXML, toPixelManifest } from './output/formatters.js'
 import type { PixelManifestEntry } from './output/formatters.js'
@@ -26,6 +28,8 @@ export class EnhancedMCP {
       new FigmaAdapter(),
       new NotionAdapter(),
       new SlackAdapter(),
+      new AsanaAdapter(),
+      new GitHubAdapter(),
       new GenericAdapter(),   // always last — fallback for unknown servers
       ...this.config.adapters,
     ]

@@ -23,6 +23,8 @@ export { ContextRegistry } from './core/registry.js'
 export { FigmaAdapter } from './adapters/figma/index.js'
 export { NotionAdapter } from './adapters/notion/index.js'
 export { SlackAdapter } from './adapters/slack/index.js'
+export { AsanaAdapter } from './adapters/asana/index.js'
+export { GitHubAdapter } from './adapters/github/index.js'
 export { GenericAdapter } from './adapters/generic/index.js'
 
 // Enrichment
