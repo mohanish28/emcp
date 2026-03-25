@@ -25,6 +25,8 @@ export { NotionAdapter } from './adapters/notion/index.js'
 export { SlackAdapter } from './adapters/slack/index.js'
 export { AsanaAdapter } from './adapters/asana/index.js'
 export { GitHubAdapter } from './adapters/github/index.js'
+export { SalesforceAdapter } from './adapters/salesforce/index.js'
+export { LinearAdapter } from './adapters/linear/index.js'
 export { GenericAdapter } from './adapters/generic/index.js'
 
 // Enrichment
