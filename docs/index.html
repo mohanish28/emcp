@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emcp — Enhanced MCP context for LLMs</title>
+  <meta name="description" content="A TypeScript package that wraps any MCP server and outputs enriched, typed, pixel-accurate, cross-server context for LLMs." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #05050d;
+      --surface: #0d0d1a;
+      --surface2: #13131f;
+      --border: #1e1e30;
+      --accent: #7c6fe0;
+      --accent2: #5b9cf6;
+      --accent3: #a78bfa;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --text: #eeeeff;
+      --muted: #7777a0;
+      --code-bg: #080812;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 16px;
+      overflow-x: hidden;
+    }
+
+    /* ── CANVAS ── */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      background: rgba(5,5,13,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(124,111,224,0.12);
+      transform: translateY(-100%);
+      animation: navSlide 0.8s 0.2s cubic-bezier(.22,1,.36,1) forwards;
+    }
+
+    @keyframes navSlide {
+      to { transform: translateY(0); }
+    }
+
+    .nav-logo {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      text-decoration: none;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #a78bfa);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0;
+      width: 0; height: 1px;
+      background: var(--accent3);
+      transition: width 0.25s cubic-bezier(.22,1,.36,1);
+    }
+
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { width: 100%; }
+
+    .nav-cta {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff !important;
+      padding: 0.38rem 1.1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: opacity 0.2s, transform 0.2s !important;
+    }
+    .nav-cta:hover { opacity: 0.85; transform: translateY(-1px) !important; }
+    .nav-cta::after { display: none !important; }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(124,111,224,0.1);
+      border: 1px solid rgba(124,111,224,0.25);
+      color: #c4b8f8;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.32rem 1rem;
+      border-radius: 999px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.7s 0.5s cubic-bezier(.22,1,.36,1) forwards;
+    }
+
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 7vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 0.8s 0.65s cubic-bezier(.22,1,.36,1) forwards;
+    }
+
+    h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #c4b5fd 0%, #93c5fd 50%, #6ee7b7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 2.8rem;
+      line-height: 1.75;
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.8s 0.8s cubic-bezier(.22,1,.36,1) forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s 0.95s cubic-bezier(.22,1,.36,1) forwards;
+    }
+
+    .btn-primary {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      padding: 0.8rem 2rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 0 rgba(124,111,224,0);
+    }
+
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,111,224,0.4); }
+    .btn-primary:hover::after { opacity: 1; }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      padding: 0.8rem 2rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, transform 0.2s, background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(124,111,224,0.5);
+      background: rgba(124,111,224,0.06);
+      transform: translateY(-2px);
+    }
+
+    .install-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: fadeUp 0.8s 1.1s cubic-bezier(.22,1,.36,1) forwards;
+    }
+
+    .install-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      background: rgba(8,8,18,0.8);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 1.1rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.88rem;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+
+    .install-box:hover { border-color: rgba(124,111,224,0.4); }
+    .install-box .prompt { color: var(--accent3); user-select: none; }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .copy-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── STATS ── */
+    .stats-row {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      gap: 0px;
+      padding: 0 2rem 4rem;
+      flex-wrap: wrap;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 140px;
+      text-align: center;
+      padding: 1.5rem 1rem;
+      border: 1px solid var(--border);
+      background: rgba(13,13,26,0.7);
+      backdrop-filter: blur(8px);
+      transition: background 0.25s, border-color 0.25s, transform 0.25s;
+      cursor: default;
+    }
+
+    .stat:first-child { border-radius: 12px 0 0 12px; }
+    .stat:last-child  { border-radius: 0 12px 12px 0; }
+    .stat:not(:first-child) { border-left: none; }
+
+    .stat:hover {
+      background: rgba(124,111,224,0.08);
+      border-color: rgba(124,111,224,0.3);
+      transform: translateY(-4px);
+      z-index: 1;
+    }
+
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      background: linear-gradient(135deg, #c4b5fd, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0.25rem;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      position: relative;
+      z-index: 10;
+      padding: 6rem 2rem;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent3);
+      margin-bottom: 0.8rem;
+    }
+
+    h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 520px;
+      line-height: 1.75;
+      margin-bottom: 3.5rem;
+    }
+
+    hr.section-divider {
+      position: relative;
+      z-index: 10;
+      border: none;
+      border-top: 1px solid var(--border);
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+    .reveal-delay-7 { transition-delay: 0.7s; }
+
+    /* ── COMPARE (3D FLIP) ── */
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 700px) { .compare { grid-template-columns: 1fr; } }
+
+    .compare-card {
+      perspective: 1200px;
+      cursor: default;
+    }
+
+    .compare-inner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: transform 0.5s cubic-bezier(.22,1,.36,1), box-shadow 0.4s;
+      transform-style: preserve-3d;
+    }
+
+    .compare-card:hover .compare-inner {
+      transform: rotateY(-5deg) rotateX(3deg) translateZ(8px);
+      box-shadow: 12px 16px 40px rgba(0,0,0,0.5);
+    }
+
+    .compare-header {
+      padding: 0.75rem 1.3rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .compare-header.before { color: var(--red); background: rgba(248,113,113,0.06); }
+    .compare-header.after  { color: var(--green); background: rgba(74,222,128,0.06); }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    .dot-green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+    pre {
+      padding: 1.5rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: var(--text);
+      background: var(--code-bg);
+    }
+
+    .dim { color: var(--muted); }
+    .kw  { color: #c084fc; }
+    .str { color: #86efac; }
+    .num { color: #93c5fd; }
+    .key { color: #fde68a; }
+    .cmt { color: #374151; }
+
+    /* ── ARCH GRID ── */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    @media (max-width: 900px) { .arch-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .arch-grid { grid-template-columns: 1fr; } }
+
+    .arch-card {
+      background: var(--surface);
+      padding: 1.8rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s, transform 0.3s;
+      cursor: default;
+    }
+
+    .arch-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(124,111,224,0.08), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .arch-card:hover { background: rgba(18,18,32,0.9); }
+    .arch-card:hover::before { opacity: 1; }
+
+    .arch-glow {
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,111,224,0.2), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .arch-card:hover .arch-glow { opacity: 1; }
+
+    .arch-num {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent3);
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .arch-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .arch-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ── ADAPTERS ── */
+    .adapter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .adapter-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      cursor: default;
+      transform-style: preserve-3d;
+      transition: border-color 0.3s, transform 0.4s cubic-bezier(.22,1,.36,1), box-shadow 0.4s;
+    }
+
+    .adapter-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(124,111,224,0.1), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .adapter-card:hover {
+      border-color: rgba(124,111,224,0.4);
+      transform: translateY(-6px) rotateX(4deg);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,111,224,0.15);
+    }
+
+    .adapter-card:hover::after { opacity: 1; }
+
+    .adapter-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.7rem;
+    }
+
+    .adapter-name { font-weight: 700; font-size: 0.95rem; }
+
+    .adapter-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-spatial { background: rgba(74,222,128,0.1); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+    .badge-semantic { background: rgba(91,156,246,0.1); color: var(--accent2); border: 1px solid rgba(91,156,246,0.2); }
+    .badge-fallback { background: rgba(251,191,36,0.1); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+
+    .adapter-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+    .adapter-tests {
+      margin-top: 0.8rem;
+      font-size: 0.74rem;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    /* ── CODE TABS ── */
+    .code-wrap {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: box-shadow 0.3s;
+    }
+
+    .code-wrap:hover { box-shadow: 0 0 40px rgba(124,111,224,0.1); }
+
+    .code-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.2rem;
+      background: var(--surface);
+    }
+
+    .code-tab {
+      padding: 0.8rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      background: none;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+      margin-bottom: -1px;
+      transition: color 0.2s;
+    }
+
+    .code-tab.active { color: var(--text); border-bottom-color: var(--accent3); }
+    .code-tab:hover { color: var(--text); }
+
+    .code-panel { display: none; }
+    .code-panel.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── CONFIDENCE ── */
+    .conf-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .conf-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 180px;
+      gap: 1.5rem;
+      align-items: center;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .conf-row:last-child { border-bottom: none; }
+    .conf-row:hover { background: rgba(124,111,224,0.04); }
+
+    .conf-score {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-weight: 800;
+      font-size: 1rem;
+    }
+
+    .conf-info-label { font-size: 0.88rem; font-weight: 600; }
+    .conf-info-example { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+
+    .conf-bar-wrap { width: 100%; }
+    .conf-bar {
+      height: 5px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    .conf-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent3), var(--accent2));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 1s cubic-bezier(.22,1,.36,1);
+    }
+
+    .conf-fill.animated { transform: scaleX(1); }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 10;
+      border-top: 1px solid var(--border);
+      padding: 3.5rem 2rem;
+      text-align: center;
+    }
+
+    .footer-logo {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.6rem;
+      background: linear-gradient(135deg, #c4b5fd, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .footer-sub {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      list-style: none;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── CURSOR GLOW ── */
+    .cursor-glow {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      background: radial-gradient(circle, rgba(124,111,224,0.06), transparent 70%);
+      transform: translate(-50%, -50%);
+      transition: left 0.1s ease, top 0.1s ease;
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 1.2rem; }
+      .nav-links { gap: 1rem; }
+      h1 { font-size: 2.4rem; }
+      section { padding: 4rem 1.2rem; }
+      .conf-row { grid-template-columns: 80px 1fr; }
+      .conf-bar-wrap { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="cursor-glow" id="cursor-glow"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">emcp</a>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#adapters">Adapters</a></li>
+    <li><a href="#quickstart">Quickstart</a></li>
+    <li><a href="https://github.com/mohanish28/emcp" target="_blank" rel="noopener">GitHub</a></li>
+    <li><a href="https://www.npmjs.com/package/@odin_ssup/emcp" target="_blank" rel="noopener" class="nav-cta">npm</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge"><span class="hero-badge-dot"></span>v0.1.1 &mdash; live on npm</div>
+  <h1>Give your LLMs<br><em>real</em> context</h1>
+  <p class="hero-sub">
+    <strong style="color:var(--text)">emcp</strong> wraps any MCP server and transforms raw tool responses into typed,
+    pixel-accurate, cross-server context — so your AI agents stop guessing.
+  </p>
+  <div class="hero-actions">
+    <a href="#quickstart" class="btn-primary">Get started &rarr;</a>
+    <a href="https://github.com/mohanish28/emcp" target="_blank" rel="noopener" class="btn-secondary">View on GitHub</a>
+  </div>
+  <div class="install-row">
+    <div class="install-box">
+      <span class="prompt">$</span>
+      <span id="install-cmd">npm install @odin_ssup/emcp</span>
+      <button class="copy-btn" onclick="copyInstall()" title="Copy">&#x2398;</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row reveal">
+  <div class="stat">
+    <div class="stat-num" data-target="117">0</div>
+    <div class="stat-label">Tests Passing</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" data-target="8">0</div>
+    <div class="stat-label">Adapters</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">0.1.1</div>
+    <div class="stat-label">Version</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">MIT</div>
+    <div class="stat-label">License</div>
+  </div>
+</div>
+
+<hr class="section-divider" />
+
+<!-- PROBLEM / SOLUTION -->
+<section id="problem">
+  <div class="reveal"><div class="section-label">The Problem</div></div>
+  <h2 class="reveal reveal-delay-1">Raw MCP output forces LLMs to guess</h2>
+  <p class="section-sub reveal reveal-delay-2">
+    Connect Figma, Notion, or Slack to an LLM through MCP and the model gets unstructured prose.
+    No coordinates, no hex colors, no hierarchy. Broken automations every time.
+  </p>
+
+  <div class="compare">
+    <div class="compare-card reveal reveal-delay-2">
+      <div class="compare-inner">
+        <div class="compare-header before"><div class="dot dot-red"></div>Before emcp &mdash; raw MCP</div>
+        <pre><span class="str">"Frame 'Dashboard' contains a button
+labeled Submit, blue color, top right area"</span>
+
+<span class="cmt">// No coordinates — "top right" is not x=1142, y=48</span>
+<span class="cmt">// No hex colors — "blue" is not #0D99FF</span>
+<span class="cmt">// No parent-child tree</span>
+<span class="cmt">// No confidence scores</span>
+<span class="cmt">// No cross-server links</span></pre>
+      </div>
+    </div>
+    <div class="compare-card reveal reveal-delay-3">
+      <div class="compare-inner">
+        <div class="compare-header after"><div class="dot dot-green"></div>After emcp &mdash; enriched</div>
+        <pre><span class="dim">{</span>
+  <span class="key">"id"</span><span class="dim">:</span>         <span class="str">"btn-submit"</span><span class="dim">,</span>
+  <span class="key">"type"</span><span class="dim">:</span>       <span class="str">"BUTTON"</span><span class="dim">,</span>
+  <span class="key">"spatial"</span><span class="dim">: {</span> <span class="key">"x"</span><span class="dim">:</span> <span class="num">1142</span><span class="dim">,</span> <span class="key">"y"</span><span class="dim">:</span> <span class="num">48</span> <span class="dim">},</span>
+  <span class="key">"style"</span><span class="dim">:   {</span> <span class="key">"fill"</span><span class="dim">:</span> <span class="str">"#0D99FF"</span> <span class="dim">},</span>
+  <span class="key">"parentId"</span><span class="dim">:</span>  <span class="str">"frame-dashboard"</span><span class="dim">,</span>
+  <span class="key">"confidence"</span><span class="dim">: {</span> <span class="key">"overall"</span><span class="dim">:</span> <span class="num">0.97</span> <span class="dim">},</span>
+  <span class="key">"schema"</span><span class="dim">:</span>    <span class="str">"emcp/v1"</span>
+<span class="dim">}</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="reveal"><div class="section-label">Architecture</div></div>
+  <h2 class="reveal reveal-delay-1">A 5-layer enrichment pipeline</h2>
+  <p class="section-sub reveal reveal-delay-2">emcp wraps transparently — no changes to your existing MCP setup.</p>
+
+  <div class="arch-grid">
+    <div class="arch-card reveal reveal-delay-1">
+      <div class="arch-glow"></div>
+      <div class="arch-num">Layer 0</div>
+      <div class="arch-name">Raw MCP Servers</div>
+      <div class="arch-desc">Figma, Notion, Slack — untouched source data.</div>
+    </div>
+    <div class="arch-card reveal reveal-delay-2">
+      <div class="arch-glow"></div>
+      <div class="arch-num">Layer 1</div>
+      <div class="arch-name">Protocol Adapter</div>
+      <div class="arch-desc">Normalizes stdio, SSE, and HTTP transports.</div>
+    </div>
+    <div class="arch-card reveal reveal-delay-3">
+      <div class="arch-glow"></div>
+      <div class="arch-num">Layer 2</div>
+      <div class="arch-name">Context Enrichment</div>
+      <div class="arch-desc">Spatial mapper + semantic tagger + confidence scorer.</div>
+    </div>
+    <div class="arch-card reveal reveal-delay-4">
+      <div class="arch-glow"></div>
+      <div class="arch-num">Layer 3</div>
+      <div class="arch-name">Structured Output</div>
+      <div class="arch-desc">JSON envelope, XML tree, or pixel manifest.</div>
+    </div>
+    <div class="arch-card reveal reveal-delay-5">
+      <div class="arch-glow"></div>
+      <div class="arch-num">Layer 4</div>
+      <div class="arch-name">Cross-Server Bus</div>
+      <div class="arch-desc">Unified registry with auto-linking and diff tracking.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- ADAPTERS -->
+<section id="adapters">
+  <div class="reveal"><div class="section-label">Adapters</div></div>
+  <h2 class="reveal reveal-delay-1">8 production-ready adapters</h2>
+  <p class="section-sub reveal reveal-delay-2">Ships with the most common MCP servers. Write your own in ~20 lines.</p>
+
+  <div class="adapter-grid">
+    <div class="adapter-card reveal reveal-delay-1">
+      <div class="adapter-top"><div class="adapter-name">Figma</div><span class="adapter-badge badge-spatial">Pixel-accurate</span></div>
+      <div class="adapter-desc">Frames, components, text nodes — x, y, w, h, fill, font, z-index, full parent tree.</div>
+      <div class="adapter-tests">&#x2713; 12 tests passing</div>
+    </div>
+    <div class="adapter-card reveal reveal-delay-2">
+      <div class="adapter-top"><div class="adapter-name">Notion</div><span class="adapter-badge badge-semantic">Semantic</span></div>
+      <div class="adapter-desc">Pages, databases, blocks, rich text, properties, timestamps.</div>
+      <div class="adapter-tests">&#x2713; 11 tests passing</div>
+    </div>
+    <div class="adapter-card reveal reveal-delay-3">
+      <div class="adapter-top"><div class="adapter-name">Slack</div><span class="adapter-badge badge-semantic">Semantic</span></div>
+      <div class="adapter-desc">Messages, threads, channels, reactions — auto thread linking.</div>
+      <div class="adapter-tests">&#x2713; 10 tests passing</div>
+    </div>
+    <div class="adapter-card reveal reveal-delay-4">
+      <div class="adapter-top"><div class="adapter-name">Asana</div><span class="adapter-badge badge-semantic">Semantic</span></div>
+      <div class="adapter-desc">Tasks, projects, sections — priority inferred from due dates and custom fields.</div>
+      <div class="adapter-tests">&#x2713; 15 tests passing</div>
+    </div>
+    <div class="adapter-card reveal reveal-delay-1">
+      <div class="adapter-top"><div class="adapter-name">GitHub</div><span class="adapter-badge badge-semantic">Semantic</span></div>
+      <div class="adapter-desc">Issues, PRs, repos, commits, files — label color as fill, diff stats.</div>
+      <div class="adapter-tests">&#x2713; 19 tests passing</div>
+    </div>
+    <div class="adapter-card reveal reveal-delay-2">
+      <div class="adapter-top"><div class="adapter-name">Salesforce</div><span class="adapter-badge badge-semantic">Semantic</span></div>
+      <div class="adapter-desc">Opportunities, contacts, accounts, cases, leads — SOQL results enriched.</div>
+      <div class="adapter-tests">&#x2713; 15 tests passing</div>
+    </div>
+    <div class="adapter-card reveal reveal-delay-3">
+      <div class="adapter-top"><div class="adapter-name">Linear</div><span class="adapter-badge badge-semantic">Semantic</span></div>
+      <div class="adapter-desc">Issues, projects, teams, cycles — priority 1–4 to role, identifier in name.</div>
+      <div class="adapter-tests">&#x2713; 14 tests passing</div>
+    </div>
+    <div class="adapter-card reveal reveal-delay-4">
+      <div class="adapter-top"><div class="adapter-name">Generic</div><span class="adapter-badge badge-fallback">Fallback</span></div>
+      <div class="adapter-desc">Best-effort fallback for any unrecognized MCP server. Always runs last.</div>
+      <div class="adapter-tests">&#x2713; Automatic</div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- QUICKSTART -->
+<section id="quickstart">
+  <div class="reveal"><div class="section-label">Quickstart</div></div>
+  <h2 class="reveal reveal-delay-1">Up and running in minutes</h2>
+  <p class="section-sub reveal reveal-delay-2">Single server, multi-server cross-linking, or custom adapters.</p>
+
+  <div class="code-wrap reveal reveal-delay-3">
+    <div class="code-tabs">
+      <button class="code-tab active" onclick="switchTab(event,'tab-single')">Single server</button>
+      <button class="code-tab" onclick="switchTab(event,'tab-multi')">Cross-server</button>
+      <button class="code-tab" onclick="switchTab(event,'tab-custom')">Custom adapter</button>
+    </div>
+
+    <div id="tab-single" class="code-panel active">
+      <pre><span class="kw">import</span> <span class="dim">{</span> EnhancedMCP <span class="dim">}</span> <span class="kw">from</span> <span class="str">'@odin_ssup/emcp'</span>
+
+<span class="kw">const</span> client <span class="dim">=</span> <span class="kw">new</span> EnhancedMCP<span class="dim">({ enrichment:</span> <span class="str">'full'</span><span class="dim">, output:</span> <span class="str">'json'</span> <span class="dim">})</span>
+
+<span class="kw">const</span> ctx <span class="dim">=</span> <span class="kw">await</span> client<span class="dim">.</span>process<span class="dim">({</span>
+  toolName<span class="dim">:</span> <span class="str">'figma_get_file'</span><span class="dim">,</span>
+  serverId<span class="dim">:</span> <span class="str">'figma'</span><span class="dim">,</span>
+  content<span class="dim">:</span>  rawMCPResponse<span class="dim">,</span>
+<span class="dim">})</span>
+
+console<span class="dim">.</span>log<span class="dim">(</span>ctx<span class="dim">.</span>nodes<span class="dim">)</span>          <span class="cmt">// typed EnrichedNode[], keyed by ID</span>
+console<span class="dim">.</span>log<span class="dim">(</span>ctx<span class="dim">.</span>meta<span class="dim">.</span>avgConfidence<span class="dim">)</span>  <span class="cmt">// 0.97</span>
+
+<span class="kw">const</span> pixels <span class="dim">=</span> <span class="kw">await</span> client<span class="dim">.</span>getPixelManifest<span class="dim">()</span>  <span class="cmt">// sorted by z-index</span>
+<span class="kw">const</span> xml    <span class="dim">=</span> <span class="kw">await</span> client<span class="dim">.</span>getXML<span class="dim">()</span>            <span class="cmt">// hierarchical tree</span></pre>
+    </div>
+
+    <div id="tab-multi" class="code-panel">
+      <pre><span class="kw">const</span> ctx <span class="dim">=</span> <span class="kw">await</span> client<span class="dim">.</span>processMany<span class="dim">([</span>
+  <span class="dim">{</span> toolName<span class="dim">:</span> <span class="str">'figma_get_file'</span><span class="dim">,</span>     serverId<span class="dim">:</span> <span class="str">'figma'</span><span class="dim">,</span>  content<span class="dim">:</span> figmaResponse  <span class="dim">},</span>
+  <span class="dim">{</span> toolName<span class="dim">:</span> <span class="str">'notion-fetch'</span><span class="dim">,</span>       serverId<span class="dim">:</span> <span class="str">'notion'</span><span class="dim">,</span> content<span class="dim">:</span> notionResponse <span class="dim">},</span>
+  <span class="dim">{</span> toolName<span class="dim">:</span> <span class="str">'slack_messages'</span><span class="dim">,</span>     serverId<span class="dim">:</span> <span class="str">'slack'</span><span class="dim">,</span>  content<span class="dim">:</span> slackResponse  <span class="dim">},</span>
+  <span class="dim">{</span> toolName<span class="dim">:</span> <span class="str">'github_list_issues'</span><span class="dim">,</span> serverId<span class="dim">:</span> <span class="str">'github'</span><span class="dim">,</span> content<span class="dim">:</span> githubResponse <span class="dim">},</span>
+<span class="dim">])</span>
+
+<span class="cmt">// Nodes with matching names auto-linked across servers</span>
+<span class="cmt">// Figma "Dashboard" ↔ Notion "Dashboard" ↔ Asana "Dashboard"</span>
+
+ctx<span class="dim">.</span>nodes<span class="dim">[</span><span class="str">'frame-dashboard'</span><span class="dim">].</span>linkedNodes
+<span class="cmt">// [{ nodeId: 'notion:page-dashboard', source: 'notion', linkType: 'related' }]</span></pre>
+    </div>
+
+    <div id="tab-custom" class="code-panel">
+      <pre><span class="kw">import type</span> <span class="dim">{</span> EMCPAdapter<span class="dim">,</span> EnrichedNode <span class="dim">}</span> <span class="kw">from</span> <span class="str">'@odin_ssup/emcp'</span>
+
+<span class="kw">export class</span> MyAdapter <span class="kw">implements</span> EMCPAdapter <span class="dim">{</span>
+  name    <span class="dim">=</span> <span class="str">'my-server'</span>
+  version <span class="dim">=</span> <span class="str">'1.0.0'</span>
+
+  canHandle<span class="dim">(</span>toolName<span class="dim">:</span> <span class="kw">string</span><span class="dim">)</span> <span class="dim">{</span>
+    <span class="kw">return</span> toolName<span class="dim">.</span>includes<span class="dim">(</span><span class="str">'my_server'</span><span class="dim">)</span>
+  <span class="dim">}</span>
+
+  <span class="kw">async</span> parse<span class="dim">(</span>toolName<span class="dim">:</span> <span class="kw">string</span><span class="dim">,</span> response<span class="dim">:</span> <span class="kw">unknown</span><span class="dim">):</span> Promise<span class="dim">&lt;</span>EnrichedNode<span class="dim">[]&gt; {</span>
+    <span class="kw">const</span> raw <span class="dim">=</span> response <span class="kw">as</span> MyResponseType
+    <span class="kw">return</span> <span class="dim">[{</span>
+      id<span class="dim">:</span> raw<span class="dim">.</span>id<span class="dim">,</span> name<span class="dim">:</span> raw<span class="dim">.</span>name<span class="dim">,</span> source<span class="dim">:</span> <span class="str">'my-server'</span><span class="dim">,</span> type<span class="dim">:</span> <span class="str">'CONTAINER'</span><span class="dim">,</span>
+      confidence<span class="dim">: {</span> spatial<span class="dim">:</span> <span class="num">0.1</span><span class="dim">,</span> semantic<span class="dim">:</span> <span class="num">0.8</span><span class="dim">,</span> overall<span class="dim">:</span> <span class="num">0.5</span> <span class="dim">},</span>
+    <span class="dim">}]</span>
+  <span class="dim">}</span>
+<span class="dim">}</span>
+
+<span class="kw">const</span> client <span class="dim">=</span> <span class="kw">new</span> EnhancedMCP<span class="dim">({</span> adapters<span class="dim">: [</span><span class="kw">new</span> MyAdapter<span class="dim">()]</span> <span class="dim">})</span></pre>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- CONFIDENCE -->
+<section id="confidence">
+  <div class="reveal"><div class="section-label">Confidence Scoring</div></div>
+  <h2 class="reveal reveal-delay-1">Every field tells the LLM what to trust</h2>
+  <p class="section-sub reveal reveal-delay-2">Per-field scores so your agent never has to guess about data quality.</p>
+
+  <div class="conf-wrap reveal reveal-delay-3">
+    <div class="conf-row">
+      <span class="conf-score" style="color:#4ade80">0.99</span>
+      <div><div class="conf-info-label">Exact from API</div><div class="conf-info-example">Figma bounding box coordinates</div></div>
+      <div class="conf-bar-wrap"><div class="conf-bar"><div class="conf-fill" style="--w:99%"></div></div></div>
+    </div>
+    <div class="conf-row">
+      <span class="conf-score" style="color:#86efac">0.80–0.95</span>
+      <div><div class="conf-info-label">Strongly inferred</div><div class="conf-info-example">Semantic type from Figma node type</div></div>
+      <div class="conf-bar-wrap"><div class="conf-bar"><div class="conf-fill" style="--w:87%"></div></div></div>
+    </div>
+    <div class="conf-row">
+      <span class="conf-score" style="color:#fbbf24">0.50–0.79</span>
+      <div><div class="conf-info-label">Inferred from hints</div><div class="conf-info-example">Button type from name "Submit Btn"</div></div>
+      <div class="conf-bar-wrap"><div class="conf-bar"><div class="conf-fill" style="--w:65%"></div></div></div>
+    </div>
+    <div class="conf-row">
+      <span class="conf-score" style="color:#f87171">0.10–0.49</span>
+      <div><div class="conf-info-label">Guessed / fallback</div><div class="conf-info-example">Generic adapter best-effort parse</div></div>
+      <div class="conf-bar-wrap"><div class="conf-bar"><div class="conf-fill" style="--w:30%"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">emcp</div>
+  <div class="footer-sub">
+    Enhanced MCP context for LLMs &mdash; MIT License &mdash;
+    Built by <a href="https://github.com/mohanish28" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline">@mohanish28</a>
+  </div>
+  <ul class="footer-links">
+    <li><a href="https://github.com/mohanish28/emcp" target="_blank" rel="noopener">GitHub</a></li>
+    <li><a href="https://www.npmjs.com/package/@odin_ssup/emcp" target="_blank" rel="noopener">npm</a></li>
+    <li><a href="https://github.com/mohanish28/emcp/issues" target="_blank" rel="noopener">Issues</a></li>
+    <li><a href="https://github.com/mohanish28/emcp/releases" target="_blank" rel="noopener">Releases</a></li>
+    <li><a href="https://github.com/mohanish28/emcp/actions" target="_blank" rel="noopener">CI Status</a></li>
+  </ul>
+</footer>
+
+<script>
+/* ── THREE.JS 3D BACKGROUND ── */
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const vsSource = `
+    attribute vec4 aPos;
+    attribute float aSize;
+    attribute float aAlpha;
+    uniform mat4 uMVP;
+    varying float vAlpha;
+    void main() {
+      gl_Position  = uMVP * aPos;
+      gl_PointSize = aSize / gl_Position.w;
+      vAlpha = aAlpha;
+    }
+  `;
+
+  const fsSource = `
+    precision mediump float;
+    varying float vAlpha;
+    void main() {
+      vec2 c = gl_PointCoord - vec2(0.5);
+      float d = length(c);
+      if (d > 0.5) discard;
+      float alpha = vAlpha * (1.0 - smoothstep(0.3, 0.5, d));
+      gl_FragColor = vec4(0.62, 0.56, 0.88, alpha);
+    }
+  `;
+
+  function compile(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    return sh;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER,   vsSource));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const N = 200;
+  const pos    = new Float32Array(N * 3);
+  const vel    = new Float32Array(N * 3);
+  const sizes  = new Float32Array(N);
+  const alphas = new Float32Array(N);
+
+  for (let i = 0; i < N; i++) {
+    pos[i*3]   = (Math.random() - 0.5) * 4;
+    pos[i*3+1] = (Math.random() - 0.5) * 4;
+    pos[i*3+2] = (Math.random() - 0.5) * 4;
+    vel[i*3]   = (Math.random() - 0.5) * 0.002;
+    vel[i*3+1] = (Math.random() - 0.5) * 0.002;
+    vel[i*3+2] = (Math.random() - 0.5) * 0.001;
+    sizes[i]   = 3 + Math.random() * 6;
+    alphas[i]  = 0.15 + Math.random() * 0.5;
+  }
+
+  const aBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, aBuf);
+  const aPos = gl.getAttribLocation(prog, 'aPos');
+
+  const sBuf = gl.createBuffer();
+  const aSize = gl.getAttribLocation(prog, 'aSize');
+
+  const alphaBuf = gl.createBuffer();
+  const aAlpha = gl.getAttribLocation(prog, 'aAlpha');
+
+  const uMVP = gl.getUniformLocation(prog, 'uMVP');
+
+  function perspective(fov, aspect, near, far) {
+    const f = 1 / Math.tan(fov / 2);
+    const nf = 1 / (near - far);
+    return new Float32Array([
+      f/aspect,0,0,0, 0,f,0,0,
+      0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0
+    ]);
+  }
+
+  function multiply(a, b) {
+    const o = new Float32Array(16);
+    for (let i=0;i<4;i++) for (let j=0;j<4;j++) for (let k=0;k<4;k++) o[i*4+j]+=a[i*4+k]*b[k*4+j];
+    return o;
+  }
+
+  function translation(x,y,z) {
+    const m = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+    m[12]=x; m[13]=y; m[14]=z; return m;
+  }
+
+  function rotY(a) {
+    const c=Math.cos(a), s=Math.sin(a);
+    return new Float32Array([c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1]);
+  }
+
+  function rotX(a) {
+    const c=Math.cos(a), s=Math.sin(a);
+    return new Float32Array([1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1]);
+  }
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
+  let t = 0, scroll = 0;
+  window.addEventListener('scroll', () => { scroll = window.scrollY; });
+
+  function frame() {
+    requestAnimationFrame(frame);
+    t += 0.005;
+
+    for (let i = 0; i < N; i++) {
+      pos[i*3]   += vel[i*3];
+      pos[i*3+1] += vel[i*3+1];
+      pos[i*3+2] += vel[i*3+2];
+      if (Math.abs(pos[i*3])   > 2.5) vel[i*3]   *= -1;
+      if (Math.abs(pos[i*3+1]) > 2.5) vel[i*3+1] *= -1;
+      if (Math.abs(pos[i*3+2]) > 2.5) vel[i*3+2] *= -1;
+    }
+
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    const aspect = canvas.width / canvas.height;
+    const P   = perspective(0.8, aspect, 0.1, 100);
+    const T   = translation(0, 0, -5);
+    const Ry  = rotY(t * 0.12 + scroll * 0.0005);
+    const Rx  = rotX(t * 0.05);
+    const MVP = multiply(P, multiply(T, multiply(Ry, Rx)));
+    gl.uniformMatrix4fv(uMVP, false, MVP);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, aBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, pos, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, sBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, sizes, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(aSize);
+    gl.vertexAttribPointer(aSize, 1, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, alphaBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, alphas, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(aAlpha);
+    gl.vertexAttribPointer(aAlpha, 1, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.POINTS, 0, N);
+  }
+
+  frame();
+})();
+
+/* ── CURSOR GLOW ── */
+const glow = document.getElementById('cursor-glow');
+document.addEventListener('mousemove', e => {
+  glow.style.left = e.clientX + 'px';
+  glow.style.top  = e.clientY + 'px';
+});
+
+/* ── 3D CARD MOUSE TILT ── */
+document.querySelectorAll('.adapter-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r   = card.getBoundingClientRect();
+    const x   = (e.clientX - r.left) / r.width;
+    const y   = (e.clientY - r.top)  / r.height;
+    const rx  = (y - 0.5) * 14;
+    const ry  = (x - 0.5) * -14;
+    card.style.transform = `translateY(-6px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    card.style.setProperty('--mx', (x*100)+'%');
+    card.style.setProperty('--my', (y*100)+'%');
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+
+/* ── SCROLL REVEAL ── */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(el => {
+    if (el.isIntersecting) {
+      el.target.classList.add('visible');
+      io.unobserve(el.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ── CONFIDENCE BAR ANIMATION ── */
+const barIO = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.conf-fill').forEach((bar, i) => {
+        const w = bar.style.getPropertyValue('--w');
+        setTimeout(() => {
+          bar.style.transform = `scaleX(${parseFloat(w)/100})`;
+        }, i * 120);
+      });
+      barIO.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.conf-wrap').forEach(el => barIO.observe(el));
+
+/* ── COUNTER ANIMATION ── */
+const counterIO = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    entry.target.querySelectorAll('[data-target]').forEach(el => {
+      const target = parseInt(el.dataset.target);
+      const dur = 1400;
+      const start = performance.now();
+      function step(now) {
+        const p = Math.min((now - start) / dur, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(ease * target);
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+    counterIO.unobserve(entry.target);
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.stats-row').forEach(el => counterIO.observe(el));
+
+/* ── CODE TABS ── */
+function switchTab(e, id) {
+  document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+/* ── COPY INSTALL ── */
+function copyInstall() {
+  navigator.clipboard.writeText('npm install @odin_ssup/emcp').then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const orig = btn.innerHTML;
+    btn.textContent = '✓';
+    btn.style.color = '#4ade80';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 1800);
+  });
+}
+</script>
+</body>
+</html>

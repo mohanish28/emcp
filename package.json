@@ -1,6 +1,6 @@
 {
   "name": "@odin_ssup/emcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Enhanced MCP — enriched, typed, pixel-accurate, cross-server context for LLMs",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -44,7 +44,7 @@
     "spatial",
     "schema"
   ],
-  "author": "emcp contributors",
+  "author": "Mohanish Kulkarni <mohanishkul.28@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
@@ -64,10 +64,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_USERNAME/emcp.git"
+    "url": "git+https://github.com/mohanish28/emcp.git"
   },
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/emcp/issues"
+    "url": "https://github.com/mohanish28/emcp/issues"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/emcp#readme"
+  "homepage": "https://mohanish28.github.io/emcp"
 }
